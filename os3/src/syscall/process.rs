@@ -3,7 +3,7 @@
 use crate::config::MAX_SYSCALL_NUM;
 use crate::syscall::SYSCALL_EXIT;
 use crate::task::task::TaskStatus;
-use crate::task::{exit_current_and_run_next, suspend_current_and_run_next, log_sys_call, get_task_running_time, get_task_syscall_times};
+use crate::task::{exit_current_and_run_next, suspend_current_and_run_next, log_sys_call, get_task_info};
 use crate::timer::get_time_us;
 
 use super::{SYSCALL_YIELD, SYSCALL_TASK_INFO, SYSCALL_GET_TIME};
@@ -16,9 +16,9 @@ pub struct TimeVal {
 }
 
 pub struct TaskInfo {
-    status: TaskStatus,
-    syscall_times: [u32; MAX_SYSCALL_NUM],
-    time: usize,
+    pub status: TaskStatus,
+    pub syscall_times: [u32; MAX_SYSCALL_NUM],
+    pub time: usize,
 }
 
 /// task exits and submit an exit code
@@ -53,14 +53,6 @@ pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
 pub fn sys_task_info(ti: *mut TaskInfo) -> isize {
     // TODO
     log_sys_call(SYSCALL_TASK_INFO);
-    unsafe {
-        (*ti).status = TaskStatus::Running;
-        (*ti).time = get_task_running_time();
-        let times = get_task_syscall_times();
-        let len = times.len();
-        for i in 0..len {
-            (*ti).syscall_times[i] = times[i];
-        }
-    }
+    get_task_info(ti);
     0
 }

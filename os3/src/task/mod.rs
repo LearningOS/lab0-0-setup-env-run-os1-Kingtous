@@ -1,6 +1,6 @@
-use alloc::vec::Vec;
 
-use crate::config::MAX_SYSCALL_NUM;
+
+use crate::{syscall::process::TaskInfo};
 
 use self::task::TASK_MANAGER;
 
@@ -26,14 +26,12 @@ pub fn run_first_task() {
 }
 
 // 统计系统调用
+#[inline]
 pub fn log_sys_call(call_id: usize) {
     TASK_MANAGER.log_sys_call(call_id);
 }
 
-pub fn get_task_running_time() -> usize {
-    TASK_MANAGER.get_task_running_time()
-}
-
-pub fn get_task_syscall_times() -> Vec<u32> {
-    TASK_MANAGER.get_task_syscall_times()
+#[inline]
+pub fn get_task_info(info: *mut TaskInfo) -> isize {
+    TASK_MANAGER.get_task_info(info)
 }
