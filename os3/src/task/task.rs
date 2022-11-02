@@ -1,13 +1,14 @@
 use core::{ptr::addr_of_mut};
 
 
+use alloc::vec::Vec;
 use lazy_static::{lazy_static};
 use super::{context::TaskContext, switch::__switch};
 
 use crate::{
-    config::MAX_APP_NUM,
+    config::{MAX_APP_NUM, MAX_SYSCALL_NUM},
     loader::{get_num_app, init_app_cx},
-    sync::UPSafeCell,
+    sync::UPSafeCell, timer::get_time,
 };
 
 
@@ -26,6 +27,9 @@ pub enum TaskStatus {
 pub struct TaskControlBlock {
     pub status: TaskStatus,
     pub cx: TaskContext,
+    
+    pub sche_st: usize, // task运行时间
+    pub syscall_times: [u32; MAX_SYSCALL_NUM]
 }
 
 #[derive(Clone)]
@@ -52,12 +56,16 @@ impl TaskManager {
         if let Some(next) = self.find_next_task_index() {
             let mut inner = self.inner.as_mut();
             let current = inner.current_task;
-
+            // println!("[KERNEL] switch program {} to {}", current, next);
             inner.tasks[next].status = TaskStatus::Running;
             inner.current_task = next;
-
             let current_task_cx_ptr = addr_of_mut!(inner.tasks[current].cx);
             let next_task_cx_ptr = addr_of_mut!(inner.tasks[next].cx);
+            // 初始化时间
+            let initial_sche_st = inner.tasks[next].sche_st;
+            if initial_sche_st == 0 {
+                inner.tasks[next].sche_st = get_time();
+            }
             drop(inner);
             unsafe {
                 __switch(current_task_cx_ptr, next_task_cx_ptr);
@@ -87,6 +95,7 @@ impl TaskManager {
     pub fn mark_current_exit(&self) {
         let mut inner = self.inner.as_mut();
         let current = inner.current_task;
+        println!("[KERNEL] task {} exited", current);
         inner.tasks[current].status = TaskStatus::Exited;
     }
 
@@ -95,6 +104,7 @@ impl TaskManager {
         let mut inner = self.inner.as_mut();
         let first_task = &mut inner.tasks[0];
         first_task.status = TaskStatus::Running;
+        first_task.sche_st = get_time();
 
         let first_task_cx_ptr = addr_of_mut!(first_task.cx);
         drop(inner);
@@ -104,6 +114,22 @@ impl TaskManager {
         }
         panic!("unreachable!");
     }
+
+    pub fn log_sys_call(&self, call_id: usize) {
+        let mut inner = self.inner.as_mut();
+        let task_index = inner.current_task;
+        inner.tasks[task_index].syscall_times[call_id] += 1;
+    }
+
+    pub fn get_task_syscall_times(& self) -> Vec<u32> {
+        let inner = self.inner.as_mut();
+        Vec::from(inner.tasks[inner.current_task].syscall_times)
+    }
+
+    pub fn get_task_running_time(&self) -> usize {
+        let inner = self.inner.as_mut();
+        get_time() - inner.tasks[inner.current_task].sche_st
+    }
 }
 
 fn init_task_manager() -> TaskManager {
@@ -111,6 +137,8 @@ fn init_task_manager() -> TaskManager {
     let mut tasks = [TaskControlBlock {
         status: TaskStatus::UnInit,
         cx: TaskContext::new_zero(),
+        sche_st: 0,
+        syscall_times: [0; MAX_SYSCALL_NUM],
     }; MAX_APP_NUM];
     // 加载所有的task
     for (index, task) in tasks.iter_mut().enumerate().take(app_cnt) {

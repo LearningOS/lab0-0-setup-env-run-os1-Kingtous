@@ -1,3 +1,7 @@
+use alloc::vec::Vec;
+
+use crate::config::MAX_SYSCALL_NUM;
+
 use self::task::TASK_MANAGER;
 
 pub mod context;
@@ -19,4 +23,17 @@ pub fn exit_current_and_run_next() {
 // 运行第一个task
 pub fn run_first_task() {
     TASK_MANAGER.run_first_task();
+}
+
+// 统计系统调用
+pub fn log_sys_call(call_id: usize) {
+    TASK_MANAGER.log_sys_call(call_id);
+}
+
+pub fn get_task_running_time() -> usize {
+    TASK_MANAGER.get_task_running_time()
+}
+
+pub fn get_task_syscall_times() -> Vec<u32> {
+    TASK_MANAGER.get_task_syscall_times()
 }
