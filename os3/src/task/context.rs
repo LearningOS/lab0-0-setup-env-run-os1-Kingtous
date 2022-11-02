@@ -1,8 +1,9 @@
-use alloc::vec;
 
-use crate::loader::init_app_cx;
+
+
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct TaskContext {
     ra: usize,      //寄存器ra
     sp: usize,      //
@@ -23,7 +24,7 @@ impl TaskContext {
             pub fn __restore();
         }
         Self {
-            ra: __restore,
+            ra: __restore as _,
             sp: kstack_ptr,
             s: [0; 12],
         }

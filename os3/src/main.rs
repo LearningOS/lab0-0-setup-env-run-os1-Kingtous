@@ -40,12 +40,17 @@ fn clear_bss() {
 pub fn rust_main() -> ! {
     clear_bss();
     logging::init();
-    println!("[kernel] Hello, world!");
+    println!("[KERNEL] Hello, world!");
     heap_alloc::init_heap();
+    println!("[KERNEL] init trap");
     trap::init();
+    println!("[KERNEL] loading apps");
     loader::load_apps();
+    println!("[KERNEL] enable timer interrupt");
     trap::enable_timer_interrupt();
+    println!("[KERNEL] set next trigger");
     timer::set_next_trigger();
+    println!("[KERNEL] run first task");
     task::run_first_task();
     panic!("Unreachable in rust_main!");
 }
