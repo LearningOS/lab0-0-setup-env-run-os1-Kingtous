@@ -66,8 +66,9 @@ pub fn load_apps() {
     for i in 0..num_app {
         let base_i = get_base_i(i);
         // clear region
-        (base_i..base_i + APP_SIZE_LIMIT)
-            .for_each(|addr| unsafe { (addr as *mut u8).write_volatile(0) });
+        println!("[KERNEL] memset app memory {}/{} on {}-{}", i, num_app, base_i , base_i + APP_SIZE_LIMIT);
+        (base_i..base_i + APP_SIZE_LIMIT).for_each(|addr| unsafe { (addr as *mut u8).write_volatile(0) });
+        println!("[KERNEL] loading app {}/{}", i, num_app);
         // load app from data section to memory
         let src = unsafe {
             core::slice::from_raw_parts(app_start[i] as *const u8, app_start[i + 1] - app_start[i])
@@ -77,6 +78,7 @@ pub fn load_apps() {
     }
 }
 
+/// 载入内存
 pub fn init_app_cx(app_id: usize) -> usize {
     KERNEL_STACK[app_id].push_context(TrapContext::app_init_context(
         get_base_i(app_id),

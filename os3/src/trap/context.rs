@@ -1,12 +1,12 @@
+//! Implementation of [`TrapContext`]
+
 use riscv::register::sstatus::{self, Sstatus, SPP};
 
 #[repr(C)]
+/// trap context structure containing sstatus, sepc and registers
 pub struct TrapContext {
-    // 32个寄存器, 32*8 bytes
     pub x: [usize; 32],
-    // 区分用户态/内核态, 8bytes
     pub sstatus: Sstatus,
-    // Trap完成后要执行的，下一条指令的地址, 8bytes
     pub sepc: usize,
 }
 
